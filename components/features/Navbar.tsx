@@ -50,11 +50,7 @@ export function Navbar() {
 
             setIsSearching(true);
             try {
-                // Mock or real backend call.
-                // Since this is client-side, we can't easily rely on server proxy without setup.
-                // We will point to the specific search endpoint.
-                const res = await fetch(`http://localhost:3001/otakudesu/search?q=${encodeURIComponent(debouncedSearch)}`);
-                const data = await res.json();
+                const data = await fetchAPI<any>(`/search?q=${encodeURIComponent(debouncedSearch)}`);
                 if (data.data?.animeList) {
                     setSearchResults(data.data.animeList.slice(0, 5)); // Limit to 5
                 }
