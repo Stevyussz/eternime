@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/otakudesu";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api-nime.vercel.app/otakudesu";
 
 export async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`;
@@ -6,7 +6,7 @@ export async function fetchAPI<T>(endpoint: string, options?: RequestInit): Prom
     try {
         const res = await fetch(url, {
             ...options,
-            cache: options?.cache || 'no-store', // Default to no-store for dynamic content
+            cache: options?.cache || 'no-store', // 
         });
 
         if (!res.ok) {
