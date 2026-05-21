@@ -1,4 +1,4 @@
-import { fetchFromProvider } from "@/lib/smartFetch";
+import { smartFetch, fetchFromProvider } from "@/lib/smartFetch";
 import { PROVIDER_ENDPOINTS } from "@/lib/providerConfig";
 import type { AnimeDetail } from "@/types";
 import { AnimeHeader } from "@/components/features/AnimeHeader";
@@ -23,20 +23,29 @@ interface ScheduleResponse {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }): Promise<Metadata> {
     const { slug } = await params;
-    const [animeId, animeSlug] = slug;
     try {
-        const res = await fetchFromProvider<{ data: { details: any } }>(
-            PROVIDER_ENDPOINTS.kuramanime.anime(animeId, animeSlug),
-            { revalidate: 600 }
-        );
-        const anime = res.data.details;
-        const synopsisList = typeof anime.synopsis === 'string'
+        let anime: any = null;
+        if (slug.length === 2) {
+             const res = await fetchFromProvider<{ data: { details: any } }>(
+                 PROVIDER_ENDPOINTS.kuramanime.anime(slug[0], slug[1])
+             );
+             anime = res?.data?.details;
+        } else if (slug.length === 1) {
+             const res = await smartFetch(
+                 (p) => PROVIDER_ENDPOINTS[p].anime(slug[0]),
+                 (raw: any) => raw?.data?.details,
+                 { providerOrder: ["otakudesu", "samehadaku"] }
+             );
+             anime = res.data;
+        }
+
+        const synopsisList = typeof anime?.synopsis === 'string'
             ? [anime.synopsis]
-            : anime.synopsis?.paragraphList || [];
+            : anime?.synopsis?.paragraphList || [];
         return {
-            title: `${anime.title}`,
+            title: `${anime?.title || "Anime"}`,
             description: synopsisList.join(" ").slice(0, 160) || "Watch anime on Eternime",
-            openGraph: { images: [anime.poster] },
+            openGraph: anime?.poster ? { images: [anime.poster] } : undefined,
         };
     } catch {
         return { title: "Anime Not Found" };
@@ -45,24 +54,45 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function AnimeDetailPage({ params }: { params: Promise<{ slug: string[] }> }) {
     const { slug } = await params;
-    const [animeId, animeSlug] = slug;
 
-    const [animeRes, scheduleRes] = await Promise.allSettled([
-        fetchFromProvider<{ data: { details: any } }>(
-            PROVIDER_ENDPOINTS.kuramanime.anime(animeId, animeSlug),
-            { revalidate: 600 }
-        ),
-        fetchFromProvider<ScheduleResponse>(
-            PROVIDER_ENDPOINTS.kuramanime.schedule,
-            { revalidate: 3600 }
-        ),
-    ]);
+    let animeRes: any = null;
+    let animeData: any = null;
+    let usedProvider = "";
+    let animeIdToPass = slug[0];
+
+    try {
+        if (slug.length === 2) {
+            animeIdToPass = `${slug[0]}/${slug[1]}`;
+            const res = await fetchFromProvider<{ data: { details: any } }>(
+                PROVIDER_ENDPOINTS.kuramanime.anime(slug[0], slug[1]),
+                { revalidate: 600 }
+            );
+            animeData = res?.data?.details;
+            usedProvider = "kuramanime";
+        } else if (slug.length === 1) {
+            animeIdToPass = slug[0];
+            const res = await smartFetch(
+                (p) => PROVIDER_ENDPOINTS[p].anime(slug[0]),
+                (raw: any) => raw?.data?.details,
+                { providerOrder: ["otakudesu", "samehadaku"], revalidate: 600 }
+            );
+            animeData = res.data;
+            usedProvider = res.activeProvider;
+        }
+    } catch (e) {
+        return <div className="text-center p-20 text-red-400">Error loading anime: {slug.join("/")}</div>;
+    }
+
+    const scheduleRes = await fetchFromProvider<ScheduleResponse>(
+        PROVIDER_ENDPOINTS.kuramanime.schedule,
+        { revalidate: 3600 }
+    ).catch(() => null);
 
     let anime: AnimeDetail & { animeId: string } | null = null;
     let nextEpisodeDate: Date | null = null;
 
-    if (animeRes.status === "fulfilled") {
-        const details = animeRes.value.data.details;
+    if (animeData) {
+        const details = animeData;
 
         // Generate episodes from range if list is missing (Kuramanime logic)
         let episodeList: any[] = details.episodeList || [];
@@ -74,8 +104,8 @@ export default async function AnimeDetailPage({ params }: { params: Promise<{ sl
                 generated.push({
                     title: `Episode ${i}`,
                     episodeId: i.toString(),
-                    animeId: animeId,
-                    animeSlug: animeSlug
+                    animeId: slug[0],
+                    animeSlug: slug[1] || ""
                 });
             }
             episodeList = generated;
@@ -86,7 +116,7 @@ export default async function AnimeDetailPage({ params }: { params: Promise<{ sl
 
         anime = {
             ...details,
-            animeId: `${animeId}/${animeSlug}`,
+            animeId: animeIdToPass,
             synopsis: { paragraphList: typeof details.synopsis === 'string' ? [details.synopsis] : details.synopsis?.paragraphList || [] },
             episodeList: episodeList,
             // Map rich objects to strings
@@ -100,13 +130,13 @@ export default async function AnimeDetailPage({ params }: { params: Promise<{ sl
             // genreList is used as array in Header, so keep it as is (Array of {title, id})
         };
     } else {
-        return <div className="text-center p-20 text-red-400">Error loading anime: {animeId}</div>;
+        return <div className="text-center p-20 text-red-400">Error loading anime details.</div>;
     }
 
-    if (scheduleRes.status === "fulfilled" && String(anime?.status || "").toLowerCase() === "ongoing") {
-        const scheduleList = scheduleRes.value.data.animeList || [];
+    if (scheduleRes && String(anime?.status || "").toLowerCase() === "ongoing") {
+        const scheduleList = scheduleRes.data?.animeList || [];
         // Find which day this anime releases
-        const found = scheduleList.find(s => s.animeId === animeId);
+        const found = scheduleList.find(s => s.animeId === slug[0]);
 
         if (found && found.day) {
             nextEpisodeDate = getNextReleaseDate(found.day);

@@ -1,5 +1,5 @@
-import { fetchFromProvider } from "@/lib/smartFetch";
-import { PROVIDER_ENDPOINTS } from "@/lib/providerConfig";
+import { smartFetch, fetchFromProvider } from "@/lib/smartFetch";
+import { PROVIDER_ENDPOINTS, ProviderName } from "@/lib/providerConfig";
 import { StreamResponse } from "@/types";
 import { Metadata } from "next";
 import { WatchContent } from "@/components/features/WatchContent";
@@ -10,11 +10,20 @@ export async function generateMetadata({
   params: Promise<{ slug: string[] }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const [animeId, animeSlug, episodeId] = slug;
   try {
-    const epPath = PROVIDER_ENDPOINTS.kuramanime.episode(animeId, animeSlug, episodeId);
-    const res = await fetchFromProvider<{ data: { details: any } }>(epPath, { revalidate: 300 });
-    const title = res?.data?.details?.title || res?.data?.details?.episodeTitle || "Episode";
+    let title = "Episode";
+    if (slug.length === 3) {
+      const epPath = PROVIDER_ENDPOINTS.kuramanime.episode(slug[0], slug[1], slug[2]);
+      const res = await fetchFromProvider<{ data: { details: any } }>(epPath, { revalidate: 300 });
+      title = res?.data?.details?.title || res?.data?.details?.episodeTitle || title;
+    } else if (slug.length === 1) {
+      const res = await smartFetch(
+        (p) => PROVIDER_ENDPOINTS[p].episode("", "", slug[0]),
+        (raw: any) => raw?.data?.details,
+        { providerOrder: ["otakudesu", "samehadaku"], revalidate: 300 }
+      );
+      title = res.data?.title || title;
+    }
     return { title: `Watch ${title}` };
   } catch {
     return { title: "Watch Anime" };
@@ -27,28 +36,58 @@ export default async function WatchPage({
   params: Promise<{ slug: string[] }>;
 }) {
   const { slug } = await params;
-  const [animeId, animeSlug, episodeIdParam] = slug;
 
   let streamData: StreamResponse | null = null;
 
   try {
-    const epPath    = PROVIDER_ENDPOINTS.kuramanime.episode(animeId, animeSlug, episodeIdParam);
-    const animePath = PROVIDER_ENDPOINTS.kuramanime.anime(animeId, animeSlug);
+    let epDetails: any = {};
+    let animeDetails: any = {};
+    let currentAnimeIdParam = "";
 
-    // ✅ Parallel fetch — episode + anime details serentak
-    const [epResult, animeResult] = await Promise.allSettled([
-      fetchFromProvider<{ data: { details: any } }>(epPath,    { revalidate: 0 }),
-      fetchFromProvider<{ data: { details: any } }>(animePath, { revalidate: 600 }),
-    ]);
+    if (slug.length === 3) {
+      const [animeId, animeSlug, episodeIdParam] = slug;
+      currentAnimeIdParam = `${animeId}/${animeSlug}`;
+      const epPath    = PROVIDER_ENDPOINTS.kuramanime.episode(animeId, animeSlug, episodeIdParam);
+      const animePath = PROVIDER_ENDPOINTS.kuramanime.anime(animeId, animeSlug);
 
-    if (epResult.status === "rejected") {
-      throw new Error(`Episode fetch failed: ${epResult.reason}`);
+      const [epResult, animeResult] = await Promise.allSettled([
+        fetchFromProvider<{ data: { details: any } }>(epPath,    { revalidate: 0 }),
+        fetchFromProvider<{ data: { details: any } }>(animePath, { revalidate: 600 }),
+      ]);
+
+      if (epResult.status === "rejected") {
+        throw new Error(`Episode fetch failed: ${epResult.reason}`);
+      }
+
+      epDetails = epResult.value?.data?.details ?? {};
+      animeDetails = animeResult.status === "fulfilled"
+        ? animeResult.value?.data?.details ?? {}
+        : {};
+    } else if (slug.length === 1) {
+      const [episodeIdParam] = slug;
+
+      const epResult = await smartFetch(
+        (p) => PROVIDER_ENDPOINTS[p].episode("", "", episodeIdParam),
+        (raw: any) => raw?.data?.details,
+        { providerOrder: ["otakudesu", "samehadaku"], revalidate: 0 }
+      );
+
+      epDetails = epResult.data ?? {};
+      const activeProvider = epResult.activeProvider as ProviderName;
+      
+      if (epDetails.animeId) {
+         currentAnimeIdParam = epDetails.animeId;
+         try {
+             const animePath = PROVIDER_ENDPOINTS[activeProvider].anime(epDetails.animeId);
+             const animeResult = await fetchFromProvider<{ data: { details: any } }>(animePath, { revalidate: 600 });
+             animeDetails = animeResult?.data?.details ?? {};
+         } catch(e) {
+             console.warn("Failed to fetch anime details for watch page", e);
+         }
+      }
+    } else {
+        throw new Error("Invalid slug length");
     }
-
-    const epDetails    = epResult.value?.data?.details ?? {};
-    const animeDetails = animeResult.status === "fulfilled"
-      ? animeResult.value?.data?.details ?? {}
-      : {};
 
     // Flatten complex objects (provider response may have {title: "..."} objects)
     const flat = (v: unknown): string => {
@@ -59,17 +98,19 @@ export default async function WatchPage({
     };
 
     // Build episode list from range data
-    const episodeList: any[] = [];
+    let episodeList: any[] = animeDetails.episodeList || [];
     if (animeDetails.episode?.last) {
       const first = animeDetails.episode.first || 1;
       const last  = animeDetails.episode.last;
+      const genList = [];
       for (let i = last; i >= first; i--) {
-        episodeList.push({
+        genList.push({
           title: `Episode ${i}`,
-          episodeId: `${animeId}/${animeSlug}/${i}`,
+          episodeId: `${currentAnimeIdParam}/${i}`,
           otakudesuUrl: "",
         });
       }
+      episodeList = genList;
     }
 
     // Auto-select first stream URL
@@ -89,10 +130,10 @@ export default async function WatchPage({
           title: epDetails.title || epDetails.episodeTitle || animeDetails.title || "",
           poster: animeDetails.poster || epDetails.poster || "",
           prevEpisode: epDetails.hasPrevEpisode
-            ? { episodeId: `${animeId}/${animeSlug}/${epDetails.prevEpisode?.episodeId}`, title: "Previous" }
+            ? { episodeId: slug.length === 3 ? `${currentAnimeIdParam}/${epDetails.prevEpisode?.episodeId}` : epDetails.prevEpisode?.episodeId, title: "Previous" }
             : null,
           nextEpisode: epDetails.hasNextEpisode
-            ? { episodeId: `${animeId}/${animeSlug}/${epDetails.nextEpisode?.episodeId}`, title: "Next" }
+            ? { episodeId: slug.length === 3 ? `${currentAnimeIdParam}/${epDetails.nextEpisode?.episodeId}` : epDetails.nextEpisode?.episodeId, title: "Next" }
             : null,
           server: epDetails.server || { qualityList: [] },
           info: {
