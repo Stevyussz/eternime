@@ -33,6 +33,7 @@ export const PROVIDER_ENDPOINTS: Record<ProviderName, {
   server?: (serverId: string) => string;
   schedule: string;
   genres: string;
+  genre: (id: string, page: number) => string;
 }> = {
   kuramanime: {
     home:      "/kuramanime/home",
@@ -44,6 +45,7 @@ export const PROVIDER_ENDPOINTS: Record<ProviderName, {
     server:    (id) => `/kuramanime/server/${id}`,
     schedule:  "/kuramanime/schedule",
     genres:    "/kuramanime/properties/genre",
+    genre:     (id, p) => `/kuramanime/properties/genre/${id}?page=${p}`,
   },
   otakudesu: {
     home:      "/otakudesu/home",
@@ -55,6 +57,7 @@ export const PROVIDER_ENDPOINTS: Record<ProviderName, {
     server:    (id) => `/otakudesu/server/${id}`,
     schedule:  "/otakudesu/schedule",
     genres:    "/otakudesu/genre",
+    genre:     (id, p) => `/otakudesu/genre/${id}?page=${p}`,
   },
   animesail: {
     home:      "/animesail/home",
@@ -66,6 +69,7 @@ export const PROVIDER_ENDPOINTS: Record<ProviderName, {
     server:    (id) => `/animesail/server/${id}`,
     schedule:  "/animesail/home",
     genres:    "/animesail/genres",
+    genre:     (id, p) => `/animesail/genres/${id}?page=${p}`,
   },
   samehadaku: {
     home:      "/samehadaku/home",
@@ -77,5 +81,6 @@ export const PROVIDER_ENDPOINTS: Record<ProviderName, {
     server:    (id) => `/samehadaku/server/${id}`,
     schedule:  "/samehadaku/schedule",
     genres:    "/samehadaku/genre",
+    genre:     (id, p) => `/samehadaku/genre/${id}?page=${p}`,
   },
 };

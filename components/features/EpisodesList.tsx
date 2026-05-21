@@ -13,6 +13,12 @@ interface EpisodeListProps {
 export function EpisodesList({ episodes }: EpisodeListProps) {
     const [search, setSearch] = useState("");
     const [isReversed, setIsReversed] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(50);
+
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value);
+        setVisibleCount(50); // reset on search
+    };
 
     const filtered = episodes
         .filter(ep => ep.title.toLowerCase().includes(search.toLowerCase()))
@@ -23,6 +29,7 @@ export function EpisodesList({ episodes }: EpisodeListProps) {
 
     // If default list is typically newest first, then "sort asc" reverses it to oldest first (Episode 1)
     const displayEpisodes = isReversed ? [...filtered].reverse() : filtered;
+    const visibleEpisodes = displayEpisodes.slice(0, visibleCount);
 
     return (
         <div className="container mx-auto px-6 pb-20">
@@ -40,7 +47,7 @@ export function EpisodesList({ episodes }: EpisodeListProps) {
                             placeholder="Search episode..."
                             className="w-full bg-secondary/30 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-brand-lime/50 transition-colors"
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={handleSearch}
                         />
                     </div>
                     <button
@@ -59,7 +66,7 @@ export function EpisodesList({ episodes }: EpisodeListProps) {
                         No episodes found matching "{search}"
                     </div>
                 ) : (
-                    displayEpisodes.map((eps) => (
+                    visibleEpisodes.map((eps) => (
                         <Link
                             href={eps.animeId && eps.animeSlug
                                 ? `/watch/${eps.animeId}/${eps.animeSlug}/${eps.episodeId}`
@@ -70,7 +77,7 @@ export function EpisodesList({ episodes }: EpisodeListProps) {
                                 <div className="w-10 h-10 rounded-full bg-brand-lime/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                                     <Play className="w-4 h-4 text-brand-lime ml-0.5" />
                                 </div>
-                                <div className="min-w-0">
+                                <div className="min-w-0 flex-1">
                                     <h4 className="font-medium text-sm md:text-base text-gray-200 group-hover:text-brand-lime transition-colors truncate">
                                         {eps.title}
                                     </h4>
@@ -83,6 +90,17 @@ export function EpisodesList({ episodes }: EpisodeListProps) {
                     ))
                 )}
             </div>
+
+            {visibleCount < displayEpisodes.length && (
+                <div className="mt-8 flex justify-center">
+                    <button
+                        onClick={() => setVisibleCount(prev => prev + 50)}
+                        className="px-6 py-2.5 bg-brand-lime/10 hover:bg-brand-lime/20 text-brand-lime border border-brand-lime/30 rounded-lg font-medium transition-colors"
+                    >
+                        Tampilkan Lebih Banyak Episode ({displayEpisodes.length - visibleCount} tersisa)
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

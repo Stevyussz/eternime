@@ -1,7 +1,8 @@
-import { smartFetch } from "@/lib/smartFetch";
-import { PROVIDER_ENDPOINTS } from "@/lib/providerConfig";
+import { fetchFromProvider, smartFetch } from "@/lib/smartFetch";
+import { PROVIDER_ENDPOINTS, ProviderName } from "@/lib/providerConfig";
 import { PagedAnimeGrid } from "@/components/features/PagedAnimeGrid";
 import { toAnimeCard, normalizeList } from "@/lib/normalize";
+import { AnimeCard } from "@/types";
 
 export const metadata = {
   title: "Ongoing Anime",
@@ -9,8 +10,8 @@ export const metadata = {
 };
 
 export default async function OngoingPage() {
-  let animeList: any[] = [];
-  let endpointStr = PROVIDER_ENDPOINTS.otakudesu.ongoing(1);
+  let animeList: AnimeCard[] = [];
+  let activeProvider: ProviderName = "otakudesu";
 
   try {
     const res = await smartFetch(
@@ -19,9 +20,21 @@ export default async function OngoingPage() {
       { revalidate: 600 }
     );
     animeList = res.data.items.map(toAnimeCard);
-    endpointStr = PROVIDER_ENDPOINTS[res.activeProvider].ongoing(1);
+    activeProvider = res.activeProvider as ProviderName;
   } catch (e) {
     console.error("[OngoingPage] Error:", e);
+  }
+
+  async function fetchNextPage(page: number): Promise<AnimeCard[]> {
+    "use server";
+    try {
+      const endpoint = PROVIDER_ENDPOINTS[activeProvider].ongoing(page);
+      const raw = await fetchFromProvider(endpoint, { revalidate: 600 });
+      return normalizeList(raw, activeProvider).items.map(toAnimeCard);
+    } catch (e) {
+      console.error("[OngoingPage] loadMore error:", e);
+      return [];
+    }
   }
 
   return (
@@ -31,7 +44,7 @@ export default async function OngoingPage() {
       </h1>
       <PagedAnimeGrid
         initialItems={animeList}
-        endpoint={endpointStr}
+        fetchNextPage={fetchNextPage}
       />
     </div>
   );

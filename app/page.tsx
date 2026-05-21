@@ -79,11 +79,6 @@ export default async function Home() {
       {/* Hero Carousel */}
       {carouselData.length > 0 && <HeroCarousel animeList={carouselData} />}
 
-      {/* Provider badge — subtle indicator */}
-      <div className="flex justify-end mt-2 mb-1">
-        <ProviderBadge provider={activeProvider} />
-      </div>
-
       {/* Schedule + Omikuji */}
       <div className="mt-6 mb-12 grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
         <div className="lg:col-span-3">

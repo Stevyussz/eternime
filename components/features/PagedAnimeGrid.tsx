@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/Button";
 
 interface PagedAnimeGridProps {
     initialItems: AnimeCardType[];
-    endpoint: string; // e.g., "/ongoing" or "/genre/action"
+    fetchNextPage: (page: number) => Promise<AnimeCardType[]>;
     initialPage?: number;
 }
 
-export function PagedAnimeGrid({ initialItems, endpoint, initialPage = 1 }: PagedAnimeGridProps) {
+export function PagedAnimeGrid({ initialItems, fetchNextPage, initialPage = 1 }: PagedAnimeGridProps) {
     const [items, setItems] = useState<AnimeCardType[]>(initialItems);
     const [page, setPage] = useState(initialPage);
     const [loading, setLoading] = useState(false);
@@ -24,15 +24,9 @@ export function PagedAnimeGrid({ initialItems, endpoint, initialPage = 1 }: Page
         setLoading(true);
 
         const nextPage = page + 1;
-        // Determine connector: if endpoint already has '?', use '&', else '?'
-        const connector = endpoint.includes('?') ? '&' : '?';
-        const url = `${endpoint}${connector}page=${nextPage}`;
 
         try {
-            // Assume API response structure has { data: { animeList: [] } }
-            // Adjust type based on generic response if needed, but for now we cast to any or define an interface
-            const res = await fetchAPI<{ data: { animeList: AnimeCardType[] } }>(url);
-            const newItems = res.data.animeList;
+            const newItems = await fetchNextPage(nextPage);
 
             if (newItems && newItems.length > 0) {
                 setItems(prev => [...prev, ...newItems]);

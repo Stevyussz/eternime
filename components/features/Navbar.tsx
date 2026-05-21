@@ -75,7 +75,7 @@ export function Navbar() {
         setIsSurpriseLoading(true);
         try {
             // Fetch first to ensure we have a valid target
-            const res = await fetchAPI<OngoingResponse>("/ongoing?page=1");
+            const res = await fetchAPI<OngoingResponse>("/otakudesu/ongoing?page=1");
             const animes = res.data.animeList;
             if (animes.length > 0) {
                 const randomAnime = animes[Math.floor(Math.random() * animes.length)];
@@ -190,8 +190,12 @@ export function Navbar() {
 
                         <ThemeToggle />
 
-                        <button className="md:hidden text-foreground" onClick={() => setIsOpen(!isOpen)}>
-                            {isOpen ? <X /> : <Menu />}
+                        <button className="md:hidden p-2 text-muted-foreground hover:text-foreground" onClick={() => setIsOpen(true)}>
+                            <Search className="w-5 h-5" />
+                        </button>
+
+                        <button className="md:hidden p-2 text-foreground" onClick={() => setIsOpen(!isOpen)}>
+                            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
                     </div>
                 </div>
@@ -206,11 +210,12 @@ export function Navbar() {
                             className="md:hidden mt-4 overflow-hidden bg-black/90 backdrop-blur-xl border-t border-white/10"
                         >
                             <div className="flex flex-col p-4 gap-4">
-                                <Link href="/" className="text-gray-300 hover:text-white">Home</Link>
-                                <Link href="/ongoing" className="text-gray-300 hover:text-white">Ongoing</Link>
-                                <Link href="/completed" className="text-gray-300 hover:text-white">Completed</Link>
-                                <Link href="/genres" className="text-gray-300 hover:text-white">Genres</Link>
-                                <form onSubmit={handleSearch} className="flex items-center bg-white/5 rounded-lg px-4 py-2 border border-white/10">
+                                <Link href="/" className="text-gray-300 hover:text-white" onClick={() => setIsOpen(false)}>Home</Link>
+                                <Link href="/ongoing" className="text-gray-300 hover:text-white" onClick={() => setIsOpen(false)}>Ongoing</Link>
+                                <Link href="/completed" className="text-gray-300 hover:text-white" onClick={() => setIsOpen(false)}>Completed</Link>
+                                <Link href="/genres" className="text-gray-300 hover:text-white" onClick={() => setIsOpen(false)}>Genres</Link>
+                                <Link href="/schedule" className="text-gray-300 hover:text-white" onClick={() => setIsOpen(false)}>Schedule</Link>
+                                <form onSubmit={handleSearch} className="flex items-center bg-white/5 rounded-lg px-4 py-2 border border-white/10 mt-2">
                                     <input
                                         type="text"
                                         placeholder="Search..."
