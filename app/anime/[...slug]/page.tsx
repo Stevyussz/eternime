@@ -1,8 +1,9 @@
-import { fetchAPI } from "@/lib/api";
-import { AnimeDetail } from "@/types";
+import { fetchFromProvider } from "@/lib/smartFetch";
+import { PROVIDER_ENDPOINTS } from "@/lib/providerConfig";
+import type { AnimeDetail } from "@/types";
 import { AnimeHeader } from "@/components/features/AnimeHeader";
 import { EpisodesList } from "@/components/features/EpisodesList";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { getNextReleaseDate } from "@/lib/scheduleHelper";
 import { SmartRecommendations } from "@/components/features/SmartRecommendations";
 
@@ -24,20 +25,21 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const { slug } = await params;
     const [animeId, animeSlug] = slug;
     try {
-        const res = await fetchAPI<{ data: { details: any } }>(`/anime/${animeId}/${animeSlug}`);
+        const res = await fetchFromProvider<{ data: { details: any } }>(
+            PROVIDER_ENDPOINTS.kuramanime.anime(animeId, animeSlug),
+            { revalidate: 600 }
+        );
         const anime = res.data.details;
-        // Adapt synopsis (string to array)
-        const synopsisList = typeof anime.synopsis === 'string' ? [anime.synopsis] : anime.synopsis?.paragraphList || [];
-
+        const synopsisList = typeof anime.synopsis === 'string'
+            ? [anime.synopsis]
+            : anime.synopsis?.paragraphList || [];
         return {
-            title: `${anime.title} - Eternime`,
+            title: `${anime.title}`,
             description: synopsisList.join(" ").slice(0, 160) || "Watch anime on Eternime",
-            openGraph: {
-                images: [anime.poster],
-            },
+            openGraph: { images: [anime.poster] },
         };
-    } catch (error) {
-        return { title: "Anime Not Found - Eternime" };
+    } catch {
+        return { title: "Anime Not Found" };
     }
 }
 
@@ -46,8 +48,14 @@ export default async function AnimeDetailPage({ params }: { params: Promise<{ sl
     const [animeId, animeSlug] = slug;
 
     const [animeRes, scheduleRes] = await Promise.allSettled([
-        fetchAPI<{ data: { details: any } }>(`/anime/${animeId}/${animeSlug}`),
-        fetchAPI<ScheduleResponse>("/schedule")
+        fetchFromProvider<{ data: { details: any } }>(
+            PROVIDER_ENDPOINTS.kuramanime.anime(animeId, animeSlug),
+            { revalidate: 600 }
+        ),
+        fetchFromProvider<ScheduleResponse>(
+            PROVIDER_ENDPOINTS.kuramanime.schedule,
+            { revalidate: 3600 }
+        ),
     ]);
 
     let anime: AnimeDetail & { animeId: string } | null = null;
