@@ -75,7 +75,7 @@ export function PlayerControls({ serverData, isTheaterMode, toggleTheaterMode, o
                                         <button
                                             key={idx}
                                             onClick={() => {
-                                                onServerSelect(srv.url);
+                                                onServerSelect(srv.url || srv.serverId);
                                                 setShowServers(false);
                                             }}
                                             className="w-full text-left px-2 py-1.5 text-xs text-gray-300 hover:text-white hover:bg-white/10 rounded flex items-center gap-2"

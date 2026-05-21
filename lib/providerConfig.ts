@@ -30,6 +30,7 @@ export const PROVIDER_ENDPOINTS: Record<ProviderName, {
   search: (q: string) => string;
   anime: (id: string, slug?: string) => string;
   episode: (animeId: string, animeSlug: string, episodeId: string) => string;
+  server?: (serverId: string) => string;
   schedule: string;
   genres: string;
 }> = {
@@ -40,6 +41,7 @@ export const PROVIDER_ENDPOINTS: Record<ProviderName, {
     search:    (q) => `/kuramanime/anime?search=${encodeURIComponent(q)}`,
     anime:     (id, slug = "") => `/kuramanime/anime/${id}/${slug}`,
     episode:   (animeId, animeSlug, episodeId) => `/kuramanime/episode/${animeId}/${animeSlug}/${episodeId}`,
+    server:    (id) => `/kuramanime/server/${id}`,
     schedule:  "/kuramanime/schedule",
     genres:    "/kuramanime/properties/genre",
   },
@@ -50,6 +52,7 @@ export const PROVIDER_ENDPOINTS: Record<ProviderName, {
     search:    (q) => `/otakudesu/search?q=${encodeURIComponent(q)}`,
     anime:     (id) => `/otakudesu/anime/${id}`,
     episode:   (_animeId, _animeSlug, episodeId) => `/otakudesu/episode/${episodeId}`,
+    server:    (id) => `/otakudesu/server/${id}`,
     schedule:  "/otakudesu/schedule",
     genres:    "/otakudesu/genre",
   },
@@ -60,6 +63,7 @@ export const PROVIDER_ENDPOINTS: Record<ProviderName, {
     search:    (q) => `/animesail/search?q=${encodeURIComponent(q)}`,
     anime:     (id) => `/animesail/anime/${id}`,
     episode:   (_animeId, _animeSlug, episodeId) => `/animesail/episode/${episodeId}`,
+    server:    (id) => `/animesail/server/${id}`,
     schedule:  "/animesail/home",
     genres:    "/animesail/genres",
   },
@@ -70,6 +74,7 @@ export const PROVIDER_ENDPOINTS: Record<ProviderName, {
     search:    (q) => `/samehadaku/search?q=${encodeURIComponent(q)}`,
     anime:     (id) => `/samehadaku/anime/${id}`,
     episode:   (_animeId, _animeSlug, episodeId) => `/samehadaku/episode/${episodeId}`,
+    server:    (id) => `/samehadaku/server/${id}`,
     schedule:  "/samehadaku/schedule",
     genres:    "/samehadaku/genre",
   },

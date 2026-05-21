@@ -31,8 +31,27 @@ export function WatchContent({ streamData, slug }: WatchContentProps) {
 
     const router = useRouter();
 
-    const handleServerSelect = async (url: string) => {
-        setCurrentUrl(url);
+    const handleServerSelect = async (urlOrId: string) => {
+        if (!urlOrId) return;
+        if (urlOrId.startsWith("http")) {
+            setCurrentUrl(urlOrId);
+        } else {
+            // It's a serverId (base64url). We need to fetch the real URL.
+            try {
+                // we assume active provider is samehadaku or otakudesu if it has serverId
+                const provider = slug.split("/").length === 3 ? "kuramanime" : "samehadaku";
+                const API_ROOT = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+                const res = await fetch(`${API_ROOT}/${provider}/server/${urlOrId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data?.data?.details?.url) {
+                        setCurrentUrl(data.data.details.url);
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to resolve server URL", e);
+            }
+        }
     };
 
     const { showShortcuts, setShowShortcuts } = useWatchShortcuts(
@@ -78,18 +97,26 @@ export function WatchContent({ streamData, slug }: WatchContentProps) {
             {/* Main Layout - Single Column now */}
             <div className="flex flex-col gap-4 relative z-30">
 
-                {/* Player Container */}
                 <div className={cn(
                     "relative w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-border/50 group transition-all duration-500",
                     isTheaterMode ? "h-[85vh] rounded-none -mx-4 lg:-mx-8 w-[calc(100%+2rem)] lg:w-[calc(100%+4rem)] border-x-0" : "aspect-video"
                 )}>
                     {currentUrl ? (
-                        <CustomVideoPlayer
-                            src={currentUrl}
-                            poster={streamData.data.details.poster}
-                            episodeId={slug}
-                            autoPlay={true}
-                        />
+                        currentUrl.match(/\.(mp4|mkv|webm|m3u8)$/i) ? (
+                            <CustomVideoPlayer
+                                src={currentUrl}
+                                poster={streamData.data.details.poster}
+                                episodeId={slug}
+                                autoPlay={true}
+                            />
+                        ) : (
+                            <iframe
+                                src={currentUrl}
+                                className="w-full h-full border-0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                        )
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-black/80">
                             <div className="text-center space-y-2 p-4">

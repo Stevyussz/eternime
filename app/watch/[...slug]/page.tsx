@@ -43,6 +43,7 @@ export default async function WatchPage({
     let epDetails: any = {};
     let animeDetails: any = {};
     let currentAnimeIdParam = "";
+    let activeProvider: ProviderName = "samehadaku";
 
     if (slug.length === 3) {
       const [animeId, animeSlug, episodeIdParam] = slug;
@@ -73,7 +74,7 @@ export default async function WatchPage({
       );
 
       epDetails = epResult.data ?? {};
-      const activeProvider = epResult.activeProvider as ProviderName;
+      activeProvider = epResult.activeProvider as ProviderName;
       
       if (epDetails.animeId) {
          currentAnimeIdParam = epDetails.animeId;
@@ -117,8 +118,25 @@ export default async function WatchPage({
     let defaultStreamingUrl = epDetails.defaultStreamingUrl || "";
     if (!defaultStreamingUrl) {
       const firstQuality = epDetails.server?.qualityList?.[0];
-      if (firstQuality?.urlList?.[0]?.url) {
-        defaultStreamingUrl = firstQuality.urlList[0].url;
+      const firstUrlObj = firstQuality?.urlList?.[0];
+      
+      if (firstUrlObj?.url) {
+        defaultStreamingUrl = firstUrlObj.url;
+      } else if (firstUrlObj?.serverId) {
+        // Resolve serverId if we don't have a direct URL
+        try {
+            // we assume activeProvider is available, but if slug is length 3 it's kuramanime
+            const providerToUse = slug.length === 3 ? "kuramanime" : activeProvider;
+            const serverEndpoint = PROVIDER_ENDPOINTS[providerToUse].server;
+            if (serverEndpoint) {
+                const serverRes = await fetchFromProvider<{ data: { details: { url: string } } }>(
+                    serverEndpoint(firstUrlObj.serverId), { revalidate: 0 }
+                );
+                defaultStreamingUrl = serverRes?.data?.details?.url || "";
+            }
+        } catch (e) {
+            console.warn("Failed to resolve default streaming URL from serverId:", e);
+        }
       }
     }
 
