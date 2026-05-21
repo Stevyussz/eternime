@@ -71,11 +71,11 @@ export function PlayerControls({ serverData, isTheaterMode, toggleTheaterMode, o
                             {serverData.qualityList?.map((quality: any) => (
                                 <div key={quality.title}>
                                     <div className="text-[10px] text-brand-lime px-2 py-1 bg-brand-lime/5 mt-1 rounded uppercase tracking-wider">{quality.title}</div>
-                                    {quality.serverList.map((srv: any) => (
+                                    {quality.urlList?.map((srv: any, idx: number) => (
                                         <button
-                                            key={srv.serverId}
+                                            key={idx}
                                             onClick={() => {
-                                                onServerSelect(srv.serverId);
+                                                onServerSelect(srv.url);
                                                 setShowServers(false);
                                             }}
                                             className="w-full text-left px-2 py-1.5 text-xs text-gray-300 hover:text-white hover:bg-white/10 rounded flex items-center gap-2"

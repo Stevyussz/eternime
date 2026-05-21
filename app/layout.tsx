@@ -1,31 +1,43 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Eternime - Watch Anime Free",
-  description: "Your gateway to eternal anime entertainment.",
+  title: {
+    default: "Eternime — Watch Anime Free",
+    template: "%s — Eternime",
+  },
+  description: "Your gateway to eternal anime entertainment. Watch anime in HD for free.",
   manifest: "/manifest.json",
-  themeColor: "#000000",
+  keywords: ["anime", "watch anime", "streaming", "free anime", "eternime"],
+  authors: [{ name: "Eternime" }],
+  openGraph: {
+    siteName: "Eternime",
+    type: "website",
+  },
+};
+
+/** Viewport export — replaces deprecated themeColor in metadata */
+export const viewport: Viewport = {
+  themeColor: "#050505",
+  colorScheme: "dark light",
 };
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Navbar } from "@/components/features/Navbar";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
-
-function NavbarWrapper() {
-  return <Navbar />;
-}
 
 export default function RootLayout({
   children,
@@ -33,7 +45,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="id" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen selection:bg-brand-lime/30 selection:text-foreground`}
       >
@@ -43,9 +55,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          {/* Subtle grid background pattern */}
           <div className="fixed inset-0 bg-[url('/grid.svg')] bg-center opacity-5 dark:opacity-20 pointer-events-none" />
 
-          <NavbarWrapper />
+          <Navbar />
 
           <main className="relative pt-24 min-h-screen">
             {children}

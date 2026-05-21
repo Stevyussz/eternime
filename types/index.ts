@@ -3,28 +3,31 @@
 export interface AnimeCard {
     title: string;
     animeId: string;
+    animeSlug?: string;
     poster: string;
     episodes: string;
     latestReleaseDate?: string;
     score?: string;
-    otakudesuUrl?: string; // Tambahan optional
     status?: string;
+    type?: string;
+    quality?: string;
     genreList?: {
         title: string;
         genreId?: string;
-        otakudesuUrl?: string;
         url?: string;
     }[];
 }
 
-// PERBAIKAN DISINI: Hapus nesting 'home'
 export interface HomeResponse {
     message: string;
     data: {
         ongoing: {
-            animeList: AnimeCard[];
+            episodeList: AnimeCard[];
         };
         completed: {
+            animeList: AnimeCard[];
+        };
+        movie: {
             animeList: AnimeCard[];
         };
     };
@@ -34,7 +37,9 @@ export interface HomeResponse {
 export interface Episode {
     title: string;
     episodeId: string;
-    otakudesuUrl: string;
+    animeId?: string;
+    animeSlug?: string;
+    otakudesuUrl?: string;
 }
 
 export interface AnimeDetail {

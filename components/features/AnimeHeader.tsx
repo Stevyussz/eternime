@@ -52,7 +52,7 @@ export function AnimeHeader({ anime, nextEpisodeDate }: AnimeHeaderProps) {
 
                         {/* Status Badge */}
                         <div className="absolute top-4 left-4 flex flex-col gap-2">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider w-fit shadow-lg ${anime.status.toLowerCase() === 'ongoing'
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider w-fit shadow-lg ${String(anime.status || "").toLowerCase() === 'ongoing'
                                 ? 'bg-brand-lime text-black'
                                 : 'bg-brand-blue text-white'
                                 }`}>
@@ -62,7 +62,7 @@ export function AnimeHeader({ anime, nextEpisodeDate }: AnimeHeaderProps) {
                     </div>
 
                     {/* Countdown Section - Only if Ongoing and date exists */}
-                    {nextEpisodeDate && anime.status.toLowerCase() === 'ongoing' && (
+                    {nextEpisodeDate && String(anime.status || "").toLowerCase() === 'ongoing' && (
                         <div className="mt-4 flex items-center gap-3">
                             <Countdown targetDate={nextEpisodeDate} />
                             <ReminderButton
@@ -131,8 +131,8 @@ export function AnimeHeader({ anime, nextEpisodeDate }: AnimeHeaderProps) {
                         {/* Genres */}
                         {anime.genreList && anime.genreList.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-8">
-                                {anime.genreList.map(genre => (
-                                    <Link key={genre.genreId} href={`/genres/${genre.genreId}`}>
+                                {anime.genreList.map((genre, index) => (
+                                    <Link key={genre.genreId || index} href={`/genres/${genre.genreId}`}>
                                         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/5 hover:bg-brand-lime/20 text-gray-300 hover:text-brand-lime border border-white/10 hover:border-brand-lime/30 transition-all cursor-pointer">
                                             {genre.title}
                                         </span>

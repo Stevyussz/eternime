@@ -13,8 +13,12 @@ interface AnimeCardProps {
 }
 
 export function AnimeCard({ anime, className, showScore = true }: AnimeCardProps) {
+    const href = anime.animeSlug && !anime.animeId.includes('/')
+        ? `/anime/${anime.animeId}/${anime.animeSlug}`
+        : `/anime/${anime.animeId}`;
+
     return (
-        <Link href={`/anime/${anime.animeId}`} className={cn("block h-full", className)}>
+        <Link href={href} className={cn("block h-full", className)}>
             <GlassCard className="h-full group hover:border-brand-lime/50 transition-all duration-300 hover:shadow-[0_0_20px_rgba(132,204,22,0.1)] relative overflow-hidden">
                 {/* Image Container */}
                 <div className="aspect-[3/4] relative overflow-hidden rounded-t-xl bg-muted/20">
@@ -62,13 +66,13 @@ export function AnimeCard({ anime, className, showScore = true }: AnimeCardProps
                             ) : (
                                 <span className={cn(
                                     "px-1.5 py-0.5 rounded-[4px] capitalize",
-                                    anime.status?.toLowerCase() === "ongoing" ? "bg-brand-lime/10 text-brand-lime" : "bg-brand-blue/10 text-brand-blue"
+                                    String(anime.status || "").toLowerCase() === "ongoing" ? "bg-brand-lime/10 text-brand-lime" : "bg-brand-blue/10 text-brand-blue"
                                 )}>
                                     {anime.status || "Anime"}
                                 </span>
                             )}
                         </span>
-                        {anime.status?.toLowerCase() === "ongoing" && (
+                        {String(anime.status || "").toLowerCase() === "ongoing" && (
                             <span className="w-2 h-2 rounded-full bg-brand-lime animate-pulse" title="Ongoing" />
                         )}
                     </div>

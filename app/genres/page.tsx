@@ -1,5 +1,6 @@
-import { fetchAPI } from "@/lib/api";
-import { Genre, GenreListResponse } from "@/types";
+import { fetchFromProvider } from "@/lib/smartFetch";
+import { PROVIDER_ENDPOINTS } from "@/lib/providerConfig";
+import type { Genre } from "@/types";
 import { GlassCard } from "@/components/ui/GlassCard";
 import Link from "next/link";
 import { ArrowRight, Tag } from "lucide-react";
@@ -12,10 +13,17 @@ export const metadata = {
 export default async function GenresPage() {
     let genres: Genre[] = [];
     try {
-        const res = await fetchAPI<GenreListResponse>("/genre");
-        genres = res.data.genreList;
+        const res = await fetchFromProvider<{ data: { propertyList: any[] } }>(
+            PROVIDER_ENDPOINTS.kuramanime.genres,
+            { revalidate: 3600 } // Genres rarely change — cache 1 jam
+        );
+        genres = (res.data.propertyList || []).map((g) => ({
+            genreId: g.propertyId,
+            title: g.title,
+            url: `/genres/${g.propertyId}`,
+        }));
     } catch (e) {
-        console.error("Failed to fetch genres", e);
+        console.error("[GenresPage] Failed to fetch genres:", e);
     }
 
     return (

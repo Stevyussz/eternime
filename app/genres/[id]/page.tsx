@@ -10,8 +10,9 @@ export default async function GenreDetailPage({ params }: { params: Promise<{ id
     let title = id.replace(/-/g, " ").toUpperCase();
 
     try {
-        const res = await fetchAPI<GenreAnimeResponse>(`/genre/${id}`);
-        animeList = res.data.animeList;
+        const res = await fetchAPI<GenreAnimeResponse>(`/properties/genre/${id}`);
+        // Kuramanime returns data.animeList
+        animeList = (res.data as any).animeList || [];
     } catch (e) {
         console.error("Failed to fetch genre details", e);
     }
@@ -29,7 +30,7 @@ export default async function GenreDetailPage({ params }: { params: Promise<{ id
             {animeList.length === 0 ? (
                 <div className="text-center py-20 text-muted-foreground">No anime found in this genre yet.</div>
             ) : (
-                <PagedAnimeGrid initialItems={animeList} endpoint={`/genre/${id}`} />
+                <PagedAnimeGrid initialItems={animeList} endpoint={`/properties/genre/${id}`} />
             )}
         </div>
     );

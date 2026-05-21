@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useWatchShortcuts } from "@/hooks/useWatchShortcuts";
 
 import { Keyboard } from "lucide-react";
+import { CustomVideoPlayer } from "@/components/features/CustomVideoPlayer";
 
 interface WatchContentProps {
     streamData: StreamResponse;
@@ -30,8 +31,8 @@ export function WatchContent({ streamData, slug }: WatchContentProps) {
 
     const router = useRouter();
 
-    const handleServerSelect = async (serverId: string) => {
-        alert("Switching servers is coming soon!");
+    const handleServerSelect = async (url: string) => {
+        setCurrentUrl(url);
     };
 
     const { showShortcuts, setShowShortcuts } = useWatchShortcuts(
@@ -82,12 +83,22 @@ export function WatchContent({ streamData, slug }: WatchContentProps) {
                     "relative w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-border/50 group transition-all duration-500",
                     isTheaterMode ? "h-[85vh] rounded-none -mx-4 lg:-mx-8 w-[calc(100%+2rem)] lg:w-[calc(100%+4rem)] border-x-0" : "aspect-video"
                 )}>
-                    <iframe
-                        src={currentUrl}
-                        className="w-full h-full"
-                        allowFullScreen
-                        title={title}
-                    />
+                    {currentUrl ? (
+                        <CustomVideoPlayer
+                            src={currentUrl}
+                            poster={streamData.data.details.poster}
+                            episodeId={slug}
+                            autoPlay={true}
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-black/80">
+                            <div className="text-center space-y-2 p-4">
+                                <MonitorPlay className="w-12 h-12 mx-auto text-brand-lime opacity-50 mb-2" />
+                                <h3 className="text-xl font-bold text-white">Select a Server</h3>
+                                <p className="text-sm text-gray-400">Choose a server below to start watching</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <PlayerControls

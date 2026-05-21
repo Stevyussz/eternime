@@ -60,7 +60,12 @@ export function EpisodesList({ episodes }: EpisodeListProps) {
                     </div>
                 ) : (
                     displayEpisodes.map((eps) => (
-                        <Link href={`/watch/${eps.episodeId}`} key={eps.episodeId}>
+                        <Link
+                            href={eps.animeId && eps.animeSlug
+                                ? `/watch/${eps.animeId}/${eps.animeSlug}/${eps.episodeId}`
+                                : `/watch/${eps.episodeId}`}
+                            key={eps.episodeId}
+                        >
                             <div className="flex items-center gap-4 p-4 rounded-xl border border-white/5 bg-secondary/10 hover:bg-white/5 hover:border-brand-lime/30 group transition-all duration-300">
                                 <div className="w-10 h-10 rounded-full bg-brand-lime/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                                     <Play className="w-4 h-4 text-brand-lime ml-0.5" />
