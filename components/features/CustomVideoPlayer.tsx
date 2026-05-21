@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Settings, FastForward, Rewind, SkipBack, SkipForward } from "lucide-react";
 import { formatDuration } from "@/lib/utils"; // Assuming helper exists, or implemented inline
+import Hls from "hls.js";
 
 interface CustomVideoPlayerProps {
     src: string;
@@ -43,6 +44,64 @@ export function CustomVideoPlayer({ src, poster, episodeId, autoPlay = true }: C
         }, 5000);
         return () => clearInterval(interval);
     }, [episodeId]);
+
+    // HLS Support
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        let hls: Hls | null = null;
+
+        if (src.includes(".m3u8")) {
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    capLevelToPlayerSize: true,
+                    maxBufferLength: 30,
+                });
+                hls.loadSource(src);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    if (autoPlay) {
+                        video.play().catch((e) => console.log("HLS autoplay failed", e));
+                    }
+                });
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal) {
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                console.log("fatal network error encountered, try to recover");
+                                hls?.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.log("fatal media error encountered, try to recover");
+                                hls?.recoverMediaError();
+                                break;
+                            default:
+                                hls?.destroy();
+                                break;
+                        }
+                    }
+                });
+            } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+                // Native HLS support (Safari)
+                video.src = src;
+                video.addEventListener("loadedmetadata", () => {
+                    if (autoPlay) video.play().catch((e) => console.log("Native autoplay failed", e));
+                });
+            }
+        } else {
+            video.src = src;
+            if (autoPlay) {
+                video.play().catch((e) => console.log("Autoplay failed", e));
+            }
+        }
+
+        return () => {
+            if (hls) {
+                hls.destroy();
+            }
+        };
+    }, [src, autoPlay]);
 
     const togglePlay = () => {
         if (videoRef.current) {
@@ -175,12 +234,10 @@ export function CustomVideoPlayer({ src, poster, episodeId, autoPlay = true }: C
         >
             <video
                 ref={videoRef}
-                src={src}
                 poster={poster}
                 className="w-full h-full object-contain"
                 onTimeUpdate={handleTimeUpdate}
                 onClick={togglePlay}
-                autoPlay={autoPlay}
                 onEnded={() => setIsPlaying(false)}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}

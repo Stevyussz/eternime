@@ -35,7 +35,7 @@ export function AnimeCard({ anime, className, showScore = true }: AnimeCardProps
                         <PlayCircle className="w-12 h-12 text-brand-lime drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] scale-75 group-hover:scale-100 transition-transform duration-300" />
                     </div>
 
-                    {/* Top Right Badge (Score or Status) */}
+                    {/* Top Badges */}
                     <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
                         {anime.score && showScore && (
                             <span className="bg-black/60 backdrop-blur-md text-brand-lime border border-brand-lime/20 px-2 py-0.5 rounded text-[10px] font-bold shadow flex items-center gap-1">

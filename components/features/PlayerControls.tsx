@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Monitor, Maximize2, Minimize2, Settings, Server, ChevronLeft, ChevronRight, SkipForward, SkipBack } from "lucide-react";
+import { Monitor, Maximize2, Minimize2, Settings, Server, ChevronLeft, ChevronRight, SkipForward, SkipBack, Download } from "lucide-react";
 import { useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { useRouter } from "next/navigation";
@@ -13,9 +13,11 @@ interface PlayerControlsProps {
     onServerSelect: (serverId: string) => void;
     prevEpisodeId?: string | null;
     nextEpisodeId?: string | null;
+    onDownloadClick?: () => void;
+    hasDownload?: boolean;
 }
 
-export function PlayerControls({ serverData, isTheaterMode, toggleTheaterMode, onServerSelect, prevEpisodeId, nextEpisodeId }: PlayerControlsProps) {
+export function PlayerControls({ serverData, isTheaterMode, toggleTheaterMode, onServerSelect, prevEpisodeId, nextEpisodeId, onDownloadClick, hasDownload }: PlayerControlsProps) {
     const [showServers, setShowServers] = useState(false);
     const router = useRouter();
 
@@ -55,7 +57,18 @@ export function PlayerControls({ serverData, isTheaterMode, toggleTheaterMode, o
                 </button>
             </div>
 
-            <div className="relative">
+            <div className="relative flex items-center gap-2">
+                {hasDownload && (
+                    <button
+                        onClick={onDownloadClick}
+                        className="flex items-center gap-2 text-sm font-medium text-brand-lime hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5 border border-brand-lime/20 bg-brand-lime/5"
+                        title="Download Episode"
+                    >
+                        <Download className="w-4 h-4" />
+                        <span className="hidden sm:inline">Download</span>
+                    </button>
+                )}
+
                 <button
                     onClick={() => setShowServers(!showServers)}
                     className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-brand-blue transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5"

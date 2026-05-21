@@ -16,6 +16,7 @@ export interface AnimeCard {
         genreId?: string;
         url?: string;
     }[];
+    provider?: string;
 }
 
 export interface HomeResponse {
@@ -90,6 +91,17 @@ export interface StreamResponse {
                     serverList: {
                         title: string;
                         serverId: string;
+                    }[];
+                }[];
+            };
+            download?: {
+                title: string;
+                qualityList: {
+                    title: string;
+                    size: string;
+                    urlList: {
+                        title: string;
+                        url: string;
                     }[];
                 }[];
             };

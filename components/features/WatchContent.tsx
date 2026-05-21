@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { StreamResponse } from "@/types";
 import { useRouter } from "next/navigation";
 import { useWatchShortcuts } from "@/hooks/useWatchShortcuts";
+import { DownloadModal } from "@/components/features/DownloadModal";
 
 import { Keyboard } from "lucide-react";
 import { CustomVideoPlayer } from "@/components/features/CustomVideoPlayer";
@@ -28,6 +29,7 @@ export function WatchContent({ streamData, slug }: WatchContentProps) {
     const [isLightsOff, setIsLightsOff] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [isReportOpen, setIsReportOpen] = useState(false);
+    const [showDownloadModal, setShowDownloadModal] = useState(false);
 
     const router = useRouter();
 
@@ -135,6 +137,8 @@ export function WatchContent({ streamData, slug }: WatchContentProps) {
                     onServerSelect={handleServerSelect}
                     prevEpisodeId={prevEpisode?.episodeId}
                     nextEpisodeId={nextEpisode?.episodeId}
+                    hasDownload={!!streamData.data.details.download?.qualityList?.length}
+                    onDownloadClick={() => setShowDownloadModal(true)}
                 />
 
                 {/* Horizontal Episode Strip */}
@@ -278,6 +282,12 @@ export function WatchContent({ streamData, slug }: WatchContentProps) {
                     </div>
                 </div>
             )}
+
+            <DownloadModal
+                isOpen={showDownloadModal}
+                onClose={() => setShowDownloadModal(false)}
+                downloadData={streamData.data.details.download}
+            />
 
             <SocialShareModal
                 anime={{
