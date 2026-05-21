@@ -1,47 +1,22 @@
-import { fetchFromProvider } from "@/lib/smartFetch";
+import { smartFetch } from "@/lib/smartFetch";
 import { PROVIDER_ENDPOINTS } from "@/lib/providerConfig";
 import { GlassCard } from "@/components/ui/GlassCard";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
-
-interface ScheduledAnime {
-    title: string;
-    animeId: string;
-    animeSlug: string;
-    day: string;
-    releaseTime: string;
-}
+import { normalizeSchedule, NormalizedScheduleDay } from "@/lib/normalize";
 
 export default async function SchedulePage() {
-    let scheduleList: { title: string; animeList: ScheduledAnime[] }[] = [];
+    let scheduleList: NormalizedScheduleDay[] = [];
 
     try {
-        const res = await fetchFromProvider<{ data: { animeList: ScheduledAnime[] } }>(
-            PROVIDER_ENDPOINTS.kuramanime.schedule,
+        const res = await smartFetch(
+            (p) => PROVIDER_ENDPOINTS[p].schedule,
+            normalizeSchedule,
             { revalidate: 3600 }
         );
-        const flatList = res.data.animeList || [];
-
-        // Group by day using a Map to preserve order if possible, or predefined order
-        const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Random"];
-        const groups: Record<string, ScheduledAnime[]> = {};
-
-        flatList.forEach(anime => {
-            const day = anime.day || "Random";
-            if (!groups[day]) groups[day] = [];
-            groups[day].push(anime);
-        });
-
-        // Convert to array sorted by dayOrder
-        scheduleList = dayOrder
-            .filter(day => groups[day] && groups[day].length > 0)
-            .map(day => ({
-                title: day,
-                animeList: groups[day]
-            }));
-
+        scheduleList = res.data.days;
     } catch (e) {
-        console.error(e);
+        console.error("[SchedulePage] Error:", e);
     }
 
     return (
@@ -79,7 +54,7 @@ export default async function SchedulePage() {
                                 {day.animeList.map((anime) => (
                                     <li key={anime.animeId}>
                                         <Link
-                                            href={`/anime/${anime.animeId}/${anime.animeSlug}`}
+                                            href={`/anime/${anime.animeId}`}
                                             className="group flex justify-between items-start gap-2"
                                         >
                                             <span className="text-sm text-muted-foreground group-hover:text-brand-lime transition-colors block py-0.5 group-hover:translate-x-1 transition-transform line-clamp-1">

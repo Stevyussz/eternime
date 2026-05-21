@@ -1,6 +1,6 @@
-import { fetchFromProvider } from "@/lib/smartFetch";
+import { smartFetch } from "@/lib/smartFetch";
 import { PROVIDER_ENDPOINTS } from "@/lib/providerConfig";
-import type { Genre } from "@/types";
+import { normalizeGenres, NormalizedGenre } from "@/lib/normalize";
 import { GlassCard } from "@/components/ui/GlassCard";
 import Link from "next/link";
 import { ArrowRight, Tag } from "lucide-react";
@@ -11,17 +11,14 @@ export const metadata = {
 };
 
 export default async function GenresPage() {
-    let genres: Genre[] = [];
+    let genres: NormalizedGenre[] = [];
     try {
-        const res = await fetchFromProvider<{ data: { propertyList: any[] } }>(
-            PROVIDER_ENDPOINTS.kuramanime.genres,
+        const res = await smartFetch(
+            (p) => PROVIDER_ENDPOINTS[p].genres,
+            normalizeGenres,
             { revalidate: 3600 } // Genres rarely change — cache 1 jam
         );
-        genres = (res.data.propertyList || []).map((g) => ({
-            genreId: g.propertyId,
-            title: g.title,
-            url: `/genres/${g.propertyId}`,
-        }));
+        genres = res.data.items;
     } catch (e) {
         console.error("[GenresPage] Failed to fetch genres:", e);
     }

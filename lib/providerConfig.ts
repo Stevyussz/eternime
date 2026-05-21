@@ -4,8 +4,8 @@ export type ProviderName = "kuramanime" | "otakudesu" | "animesail" | "samehadak
 
 /** Urutan prioritas provider. Provider pertama dicoba duluan. */
 export const PROVIDER_ORDER: ProviderName[] = [
-  "kuramanime",
   "otakudesu",
+  "kuramanime",
   "animesail",
   "samehadaku",
 ];

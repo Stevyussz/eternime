@@ -1,7 +1,7 @@
-import { fetchFromProvider } from "@/lib/smartFetch";
+import { smartFetch } from "@/lib/smartFetch";
 import { PROVIDER_ENDPOINTS } from "@/lib/providerConfig";
-import type { AnimeCard } from "@/types";
 import { PagedAnimeGrid } from "@/components/features/PagedAnimeGrid";
+import { toAnimeCard, normalizeList } from "@/lib/normalize";
 
 export const metadata = {
     title: "Completed Anime",
@@ -9,13 +9,17 @@ export const metadata = {
 };
 
 export default async function CompletedPage() {
-    let animeList: AnimeCard[] = [];
+    let animeList: any[] = [];
+    let endpointStr = PROVIDER_ENDPOINTS.otakudesu.completed(1);
+
     try {
-        const res = await fetchFromProvider<{ data: { animeList: AnimeCard[] } }>(
-            PROVIDER_ENDPOINTS.kuramanime.completed(1),
+        const res = await smartFetch(
+            (p) => PROVIDER_ENDPOINTS[p].completed(1),
+            normalizeList,
             { revalidate: 600 }
         );
-        animeList = res.data.animeList || [];
+        animeList = res.data.items.map(toAnimeCard);
+        endpointStr = PROVIDER_ENDPOINTS[res.activeProvider].completed(1);
     } catch (e) {
         console.error("[CompletedPage] Error:", e);
     }
@@ -26,7 +30,7 @@ export default async function CompletedPage() {
                 Completed Anime
             </h1>
 
-            <PagedAnimeGrid initialItems={animeList} endpoint={PROVIDER_ENDPOINTS.kuramanime.completed(1)} />
+            <PagedAnimeGrid initialItems={animeList} endpoint={endpointStr} />
         </div>
     );
 }
